@@ -20,7 +20,7 @@ class modbus_device(object):
         self.UnitID = unitID
         self.connected = None
         self.connect()
-        self.register = {}
+        self.registers = {}
         pass
 
     def connect(self):
@@ -57,12 +57,12 @@ class modbus_device(object):
         Returns:
             [type]: [description]
         """
-        self.register[name] = self.modbus_register(address, length, signed, factor, type_, unit)
+        self.registers[name] = self.modbus_register(address, length, signed, factor, type_, unit)
         test = self.read(name) # Init values
         if test:
             return True
         else:
-            del self.register[name]
+            del self.registers[name]
 
     def removeRegister(self, name: str):
         """Delete register from register dictionary
@@ -70,7 +70,7 @@ class modbus_device(object):
         Args:
             name (str): Name of the register to remove
         """
-        del self.register[name]
+        del self.registers[name]
 
     def read(self, name: str):
         """Read raw data from a modbus register
@@ -82,7 +82,7 @@ class modbus_device(object):
             int: Data read from the register
         """
         try:
-            return self.register[name].get_data(self.client, self.UnitID)
+            return self.registers[name].get_data(self.client, self.UnitID)
         except:
             logging.error("Error reading register "+name)
 
@@ -96,21 +96,21 @@ class modbus_device(object):
             float/int/bool: Value of the register. Datatype is specified in the register.
         """
         try:
-            value = round(float(TC.list_to_number(self.read(name), signed=self.register[name].signed) * self.register[name].factor), 2)
+            value = round(float(TC.list_to_number(self.read(name), signed=self.registers[name].signed) * self.registers[name].factor), 2)
         except Exception as e:
             logging.error("Error reading value from register "+name+", Exeption: "+str(e))
 
-        value_type = self.register[name].type
+        value_type = self.registers[name].type
         if value_type == "float":
-            self.register[name].value = float(value)
+            self.registers[name].value = float(value)
         elif value_type == "int":
-            self.register[name].value = int(value)
+            self.registers[name].value = int(value)
         elif value_type == "bool":
             if value == 0.0:
-                self.register[name].value = False
+                self.registers[name].value = False
             else:
-                self.register[name].value = True
-        return self.register[name].value
+                self.registers[name].value = True
+        return self.registers[name].value
 
     def write_register(self, name: str, value: int):
         """Write data to modbus register
@@ -119,7 +119,7 @@ class modbus_device(object):
             name (str): Name of the register
             value (int): Data to be written
         """
-        register = self.register[name]
+        register = self.registers[name]
         try:
             register.write(self.client, value, self.UnitID)
         except:
@@ -135,11 +135,11 @@ class modbus_device(object):
             str: String with Name + value + unit
         """
         value = self.read_value(name)
-        unit = self.register[name].unit
+        unit = self.registers[name].unit
         if not unit:
             unit = ""
         string = name+": "+str(value)+unit
-        self.register[name].string = string
+        self.registers[name].string = string
         return string
 
     def read_all(self):
@@ -149,9 +149,9 @@ class modbus_device(object):
             list: List of all values. [[Name, value], ... ]
         """
         ret_val = []
-        for i in self.register:
-            if self.register[i].unit :
-                ret_val.append([i, round(self.read_value(i),2), self.register[i].unit])
+        for i in self.registers:
+            if self.registers[i].unit :
+                ret_val.append([i, round(self.read_value(i),2), self.registers[i].unit])
             else:
                 ret_val.append([i, round(self.read_value(i),2), ""])
             pass
