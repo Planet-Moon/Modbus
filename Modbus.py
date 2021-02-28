@@ -26,11 +26,18 @@ class modbus_device(object):
     def connect(self):
         """Connect to modbus device
         """
-        try:
-            self.client.connect()
-            self.connected = True
-        except:
-            logging.error("Connection to {}:{} failed!".format(self.ipAddress, self.port))
+        retries = 10
+        i = 0
+        while i < retries:
+            try:
+                self.client.connect()
+                self.connected = True
+                break
+            except:
+                logging.error("Connection to {}:{} failed!".format(self.ipAddress, self.port))
+            i += 1
+            time.sleep(2)
+        if not self.connected:
             exit()
 
     def close(self):
