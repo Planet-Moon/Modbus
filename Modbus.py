@@ -1,5 +1,6 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 import logging
+import time
 import TypeConversion as TC
 
 class modbus_device(object):
