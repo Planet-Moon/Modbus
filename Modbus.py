@@ -3,6 +3,8 @@ import logging
 import time
 import TypeConversion as TC
 
+logger = logging.getLogger(__file__)
+
 class modbus_device(object):
     def __init__(self, ipAddress: str, port="", unitID=1):
         """Create a modbus device
@@ -35,7 +37,7 @@ class modbus_device(object):
                 self.connected = True
                 break
             except:
-                logging.error("Connection to {}:{} failed!".format(self.ipAddress, self.port))
+                logger.error("Connection to {}:{} failed!".format(self.ipAddress, self.port))
             i += 1
             time.sleep(2)
         if not self.connected:
@@ -48,7 +50,7 @@ class modbus_device(object):
             self.client.close()
             self.connected = False
         except:
-            logging.warning("Connection could not be closed!")
+            logger.warning("Connection could not be closed!")
 
     def newRegister(self, name: str, address: int, length: int, signed=False, factor=1, type_="int", unit=""):
         """Create new register
@@ -92,7 +94,7 @@ class modbus_device(object):
         try:
             return self.registers[name].get_data(self.client, self.UnitID)
         except:
-            logging.error("Error reading register "+name)
+            logger.error("Error reading register "+name)
 
     def read_value(self, name: str):
         """Read the value from a modbus register
@@ -106,7 +108,7 @@ class modbus_device(object):
         try:
             value = round(float(TC.list_to_number(self.read(name), signed=self.registers[name].signed) * self.registers[name].factor), 2)
         except Exception as e:
-            logging.error("Error reading value from register "+name+", Exeption: "+str(e))
+            logger.error("Error reading value from register "+name+", Exeption: "+str(e))
 
         value_type = self.registers[name].type
         if value_type == "float":
@@ -131,7 +133,7 @@ class modbus_device(object):
         try:
             register.write(self.client, value, self.UnitID)
         except:
-            logging.error("Error writing register "+name+" with value "+str(value))
+            logger.error("Error writing register "+name+" with value "+str(value))
 
     def read_string(self, name: str):
         """Read the value from a modbus register with name and unit string
@@ -204,7 +206,7 @@ class modbus_device(object):
                 self.response = client.read_holding_registers(self.address,count=self.length, unit=unitID)
             except Exception as e:
                 self.error = 1
-                logging.error("Error reading "+str(client)+", "+str(e))
+                logger.error("Error reading "+str(client)+", "+str(e))
             assert(not self.response.isError())
             return self.response
 
@@ -223,7 +225,7 @@ class modbus_device(object):
                 self.data = self.response.registers
                 return self.data
             except:
-                logging.error("Error reading "+str(client.host)+", register "+str(self.address))
+                logger.error("Error reading "+str(client.host)+", register "+str(self.address))
             pass
 
         def write(self, client, value: int, unitID: int):
