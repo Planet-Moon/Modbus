@@ -105,6 +105,7 @@ class modbus_device(object):
         Returns:
             float/int/bool: Value of the register. Datatype is specified in the register.
         """
+        value = 0 # default value
         try:
             value = round(float(TC.list_to_number(self.read(name), signed=self.registers[name].signed) * self.registers[name].factor), 2)
         except Exception as e:
