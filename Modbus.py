@@ -71,6 +71,7 @@ class modbus_device(object):
             return True
         else:
             del self.registers[name]
+            return False
 
     def removeRegister(self, name: str):
         """Delete register from register dictionary
