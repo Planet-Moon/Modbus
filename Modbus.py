@@ -33,11 +33,10 @@ class modbus_device(object):
         i = 0
         while i < retries:
             try:
-                self.client.connect()
-                self.connected = True
+                self.connected = self.client.connect()
                 break
             except:
-                logger.error("Connection to {}:{} failed!".format(self.ipAddress, self.port))
+                logger.error("ModbusError: Connection to {}:{} failed!".format(self.ipAddress, self.port))
             i += 1
             time.sleep(2)
         if not self.connected:
