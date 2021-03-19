@@ -3,7 +3,7 @@ import logging
 import time
 import TypeConversion as TC
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 class modbus_device(object):
     def __init__(self, ipAddress: str, port="", unitID=1):
