@@ -40,6 +40,7 @@ class modbus_device(object):
             i += 1
             time.sleep(2)
         if not self.connected:
+            logger.error("Failed to connect to modbus device {}".format(self.ipAddress))
             exit()
 
     def close(self):
