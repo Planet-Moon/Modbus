@@ -1,4 +1,5 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from typing import Union
 import logging
 import time
 import TypeConversion as TC
@@ -53,8 +54,8 @@ class modbus_device(object):
         except:
             logger.warning("Connection could not be closed!")
 
-    def newRegister(self, name: str, address: int, length: int, signed=False, factor=1, type_="int", unit=""):
-        """Create new register
+    def newRegister(self, name: str, address: int, length: int, signed=False, factor=1, type_="int", unit="") -> bool:
+        """Create a new register
 
         Args:
             name (str): Name of the register (will be used to write and read the register)
@@ -66,7 +67,7 @@ class modbus_device(object):
             unit (str, optional): Unit string of the value, e. g. " Wh" or " °C". Defaults to "".
 
         Returns:
-            [type]: [description]
+            bool: true when creation was successful
         """
         self.registers[name] = self.modbus_register(address, length, signed, factor, type_, unit)
         test = self.read(name) # Init values
@@ -84,7 +85,7 @@ class modbus_device(object):
         """
         del self.registers[name]
 
-    def read(self, name: str):
+    def read(self, name: str) -> int:
         """Read raw data from a modbus register
 
         Args:
@@ -98,7 +99,7 @@ class modbus_device(object):
         except:
             logger.error("Error reading register "+name)
 
-    def read_value(self, name: str):
+    def read_value(self, name: str) -> Union[float, int, bool]:
         """Read the value from a modbus register
 
         Args:
@@ -138,7 +139,7 @@ class modbus_device(object):
         except:
             logger.error("Error writing register "+name+" with value "+str(value))
 
-    def read_string(self, name: str):
+    def read_string(self, name: str) -> str:
         """Read the value from a modbus register with name and unit string
 
         Args:
@@ -155,7 +156,7 @@ class modbus_device(object):
         self.registers[name].string = string
         return string
 
-    def read_all(self):
+    def read_all(self) -> list:
         """Read all modbus registers
 
         Returns:
@@ -194,7 +195,7 @@ class modbus_device(object):
             self.unit = unit
             self.value = None
 
-        def read(self, client, unitID: int):
+        def read(self, client, unitID: int) -> int:
             """Read the register
 
             Args:
@@ -207,13 +208,13 @@ class modbus_device(object):
             self.error = 0
             try:
                 self.response = client.read_holding_registers(self.address,count=self.length, unit=unitID)
-            except Exception as e:
+            except BaseException as e:
                 self.error = 1
                 logger.error("Error reading "+str(client)+", "+str(e))
             assert(not self.response.isError())
             return self.response
 
-        def get_data(self, client, unitID: int):
+        def get_data(self, client, unitID: int) -> int:
             """Read last data of the register and update self.data
 
             Args:
