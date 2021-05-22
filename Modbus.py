@@ -7,7 +7,7 @@ import TypeConversion as TC
 logger = logging.getLogger(__name__)
 
 class modbus_device(object):
-    def __init__(self, ipAddress: str, port="", unitID=1):
+    def __init__(self, ipAddress:str, port:str="", unitID:int=1):
         """Create a modbus device
 
         Args:
