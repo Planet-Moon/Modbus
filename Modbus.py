@@ -1,4 +1,5 @@
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from typing import Union
 import logging
 import time
@@ -6,8 +7,8 @@ import TypeConversion as TC
 
 logger = logging.getLogger(__name__)
 
-class modbus_device(object):
-    def __init__(self, ipAddress:str, port:str="", unitID:int=1):
+class Modbus_device(object):
+    def __init__(self, ipAddress:str, port:str="502", unitID:int=1):
         """Create a modbus device
 
         Args:
@@ -15,16 +16,16 @@ class modbus_device(object):
             port (str, optional): Port used by TCP. Defaults to "".
             unitID (int, optional): UnitID to communicate with device. Defaults to 1.
         """
-        self.ipAddress = ipAddress
-        self.port = port
+        self.ipAddress:str = ipAddress
+        self.port:str = port
         if self.port:
-            self.client = ModbusClient(self.ipAddress, port=self.port)
+            self.client:ModbusClient = ModbusClient(self.ipAddress, port=self.port)
         else:
-            self.client = ModbusClient(self.ipAddress)
-        self.UnitID = unitID
-        self.connected = None
+            self.client:ModbusClient = ModbusClient(self.ipAddress)
+        self.UnitID:int = unitID
+        self.connected:bool = None
         self.connect()
-        self.registers = {}
+        self.registers:dict[str,Modbus_register] = {}
         pass
 
     def connect(self):
@@ -54,7 +55,7 @@ class modbus_device(object):
         except:
             logger.warning("Connection could not be closed!")
 
-    def newRegister(self, name: str, address: int, length: int, signed=False, factor=1, type_="int", unit="") -> bool:
+    def newRegister(self, name: str, address: int, length: int, signed:bool=False, factor:float=1, type_:str="int", unit:str="") -> bool:
         """Create a new register
 
         Args:
@@ -69,7 +70,7 @@ class modbus_device(object):
         Returns:
             bool: true when creation was successful
         """
-        self.registers[name] = self.modbus_register(address, length, signed, factor, type_, unit)
+        self.registers[name] = Modbus_register(address, length, signed, factor, type_, unit)
         test = self.read(name) # Init values
         if test:
             return True
@@ -152,8 +153,7 @@ class modbus_device(object):
         unit = self.registers[name].unit
         if not unit:
             unit = ""
-        string = name+": "+str(value)+unit
-        self.registers[name].string = string
+        string = f"{name}: {str(value)} {unit}"
         return string
 
     def read_all(self) -> list:
@@ -172,84 +172,84 @@ class modbus_device(object):
         pass
         return ret_val
 
-    class modbus_register:
-        def __init__(self, address: int, length: int, signed: bool, factor: float, type_: str, unit: str):
-            """Create modbus register
+class Modbus_register:
+    def __init__(self, address: int, length: int, signed: bool, factor: float, type_: str, unit: str):
+        """Create modbus register
 
-            Args:
-                address (int): Address of the register
-                length (int): Wordlength of the register
-                signed (bool): True if the register is signed
-                factor (float): Factor of the register data
-                type_ (str): Datatype of the register data
-                unit (str): Unit of the register value
-            """
-            self.address = address
-            self.length = length
-            self.response = []
-            self.data = []
-            self.error = 0
-            self.signed = signed
-            self.factor = factor
-            self.type = type_
-            self.unit = unit
-            self.value = None
+        Args:
+            address (int): Address of the register
+            length (int): Wordlength of the register
+            signed (bool): True if the register is signed
+            factor (float): Factor of the register data
+            type_ (str): Datatype of the register data
+            unit (str): Unit of the register value
+        """
+        self.address:int = address
+        self.length:int = length
+        self.response:ReadHoldingRegistersResponse = ReadHoldingRegistersResponse()
+        self.data:list[int] = []
+        self.error = 0
+        self.signed:bool = signed
+        self.factor:float = factor
+        self.type:str = type_
+        self.unit:str = unit
+        self.value = None
 
-        def read(self, client, unitID: int) -> int:
-            """Read the register
+    def read(self, client:ModbusClient, unitID: int) -> int:
+        """Read the register
 
-            Args:
-                client (modbusClient): Modbusclient of a device
-                unitID (int): UnitID of the device
+        Args:
+            client (modbusClient): Modbusclient of a device
+            unitID (int): UnitID of the device
 
-            Returns:
-                int: Data of the register
-            """
-            self.error = 0
-            try:
-                self.response = client.read_holding_registers(self.address,count=self.length, unit=unitID)
-            except BaseException as e:
-                self.error = 1
-                logger.error("Error reading "+str(client)+", "+str(e))
-            assert(not self.response.isError())
-            return self.response
+        Returns:
+            int: Data of the register
+        """
+        self.error = 0
+        try:
+            self.response = client.read_holding_registers(self.address,count=self.length, unit=unitID)
+        except BaseException as e:
+            self.error = 1
+            logger.error("Error reading "+str(client)+", "+str(e))
+        assert(not self.response.isError())
+        return self.response
 
-        def get_data(self, client, unitID: int) -> int:
-            """Read last data of the register and update self.data
+    def get_data(self, client:ModbusClient, unitID: int) -> int:
+        """Read last data of the register and update self.data
 
-            Args:
-                client (modbusClient): Modbusclient of a device
-                unitID (int): UnitID of the device
+        Args:
+            client (modbusClient): Modbusclient of a device
+            unitID (int): UnitID of the device
 
-            Returns:
-                int: Data of the register
-            """
-            self.read(client, unitID)
-            try:
-                self.data = self.response.registers
-                return self.data
-            except:
-                logger.error("Error reading "+str(client.host)+", register "+str(self.address))
-            pass
+        Returns:
+            int: Data of the register
+        """
+        self.read(client, unitID)
+        try:
+            self.data = self.response.registers
+            return self.data
+        except:
+            logger.error("Error reading "+str(client.host)+", register "+str(self.address))
+        pass
 
-        def write(self, client, value: int, unitID: int):
-            """Write data to the register
+    def write(self, client:ModbusClient, value: int, unitID: int):
+        """Write data to the register
 
-            Args:
-                client (modbusClient): Modbusclient of a device
-                value (int): Value to be written
-                unitID (int): UnitID of the device
+        Args:
+            client (modbusClient): Modbusclient of a device
+            value (int): Value to be written
+            unitID (int): UnitID of the device
 
-            Raises:
-                Exception: [description]
-            """
-            value = int(value / self.factor)
-            value = TC.number_to_wordList(value, self.signed, self.length)
-            if isinstance(value, list):
-                if not len(value) > self.length:
-                    rq = client.write_registers(self.address, value, unit=unitID)
-                else:
-                    raise Exception("Value too long for register. length = "+str(self.length))
-            else:
+        Raises:
+            Exception: [description]
+        """
+        value = int(value / self.factor)
+        value = TC.number_to_wordList(value, self.signed, self.length)
+        if isinstance(value, list):
+            if not len(value) > self.length:
                 rq = client.write_registers(self.address, value, unit=unitID)
-            self.value = value
+            else:
+                raise Exception("Value too long for register. length = "+str(self.length))
+        else:
+            rq = client.write_registers(self.address, value, unit=unitID)
+        self.value = value
